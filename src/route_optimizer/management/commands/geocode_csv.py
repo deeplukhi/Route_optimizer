@@ -5,7 +5,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 
 from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
+from geopy.exc import GeocoderServiceError
 
 from route_optimizer.fuel_data import PROJECT_ROOT
 
@@ -53,15 +53,18 @@ class Command(BaseCommand):
         geocoded = []
         failed = 0
         for i, row in enumerate(pending, start=1):
+            time.sleep(sleep_seconds)
             lat, lon = self._geocode(geocoder, row)
             if lat is None or lon is None:
                 failed += 1
                 self.stdout.write(f"  [{i}/{len(pending)}] failed: {row['OPIS Truckstop ID']}")
+                self.stdout.flush()
                 continue
             geocoded.append({**row, "Latitude": lat, "Longitude": lon})
             if i % 25 == 0:
+                self._append_rows(output_path, rows, geocoded, done_ids)
                 self.stdout.write(f"  [{i}/{len(pending)}] geocoded {i} rows...")
-            time.sleep(sleep_seconds)
+            self.stdout.flush()
 
         self._append_rows(output_path, rows, geocoded, done_ids)
         self.stdout.write(
@@ -92,8 +95,8 @@ class Command(BaseCommand):
             row["Address"], row["City"], row["State"]
         )
         try:
-            location = geocoder.geocode(query)
-        except GeocoderTimedOut:
+            location = geocoder.geocode(query, timeout=20)
+        except GeocoderServiceError:
             return None, None
         if location is None:
             return None, None
