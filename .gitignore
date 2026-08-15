@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment / secrets
+.env
+
+# Django
+db.sqlite3
+staticfiles/
+media/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Generated data artifacts
+fuel_prices_with_coords.csv
