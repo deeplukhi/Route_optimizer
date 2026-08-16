@@ -58,12 +58,11 @@ class Command(BaseCommand):
             if lat is None or lon is None:
                 failed += 1
                 self.stdout.write(f"  [{i}/{len(pending)}] failed: {row['OPIS Truckstop ID']}")
-                self.stdout.flush()
-                continue
-            geocoded.append({**row, "Latitude": lat, "Longitude": lon})
+            else:
+                geocoded.append({**row, "Latitude": lat, "Longitude": lon})
             if i % 25 == 0:
                 self._append_rows(output_path, rows, geocoded, done_ids)
-                self.stdout.write(f"  [{i}/{len(pending)}] geocoded {i} rows...")
+                self.stdout.write(f"  [{i}/{len(pending)}] geocoded {len(geocoded)} rows...")
             self.stdout.flush()
 
         self._append_rows(output_path, rows, geocoded, done_ids)
