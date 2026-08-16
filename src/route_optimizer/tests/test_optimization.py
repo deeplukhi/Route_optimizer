@@ -90,12 +90,21 @@ class TestGreedyAlgorithm:
     def test_six_hundred_mile_gap_raises_impossible(self):
         stations = [make_station("A", 100, 3.0), make_station("B", 800, 3.0)]
 
-        with pytest.raises(RouteImpossibleError):
+        with pytest.raises(RouteImpossibleError) as excinfo:
             optimization_service.optimize_fuel_stops(stations, 1200, 50)
 
+        assert excinfo.value.from_mile == 100
+        assert excinfo.value.to_mile == 600
+        assert "available geocoded station dataset" in str(excinfo.value)
+
     def test_no_stations_on_long_trip_raises_impossible(self):
-        with pytest.raises(RouteImpossibleError):
+        with pytest.raises(RouteImpossibleError) as excinfo:
             optimization_service.optimize_fuel_stops([], 600, 50)
+
+        assert excinfo.value.from_mile == 0
+        assert excinfo.value.to_mile == 500
+        assert "available geocoded station dataset" in str(excinfo.value)
+        assert "no fuel stations in this area" not in str(excinfo.value).lower()
 
 
 class TestStationMatching:

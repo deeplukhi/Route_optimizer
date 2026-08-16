@@ -161,7 +161,12 @@ class TestOptimizeRouteEndpoint:
             response = post_route({"start": "A", "end": "B"})
 
         assert response.status_code == 400
-        assert "error" in response.json()
+        body = response.json()
+        assert body["error"] == "no_reachable_fuel_station"
+        assert "available geocoded station dataset" in body["message"]
+        assert "no fuel stations in this area" not in body["message"].lower()
+        assert body["from_mile"] == 0
+        assert body["to_mile"] == 500
 
     def test_missing_fields_return_400(self, post_route):
         response = post_route({"start": "Boston, MA"})

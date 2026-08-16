@@ -75,8 +75,8 @@ def optimize_fuel_stops(
         ]
         if not window:
             raise RouteImpossibleError(
-                f"No reachable fuel station between mile {current_mile:.0f} "
-                f"and mile {current_mile + range_remaining:.0f}"
+                from_mile=current_mile,
+                to_mile=current_mile + range_remaining,
             )
 
         winner = min(window, key=lambda station: station["price"])

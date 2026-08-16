@@ -7,6 +7,16 @@ A Django REST API that calculates optimal, cost-effective fuel stops along a dri
 - Vehicle efficiency: 10 MPG
 - Algorithm: Greedy Sliding Window (prioritizes cheapest reachable station)
 
+## Data Coverage & Limitations
+
+- The assessment CSV (`fuel-prices-for-be-assessment.csv`) is the source of truck-stop and fuel-price data.
+- Station coordinates are derived/enriched during preprocessing (`geocode_csv`).
+- Some source stations may remain unresolved and are therefore not available to route matching.
+- Only stations with successfully resolved/validated coordinates can participate in route matching and optimization.
+- A route failure caused by a missing reachable station (HTTP 400 with `error: "no_reachable_fuel_station"`) reflects a gap in the currently geocoded station dataset, not necessarily an absence of real-world stations.
+- The API therefore does not claim that no real-world station exists in the affected segment; `from_mile`/`to_mile` identify the affected route segment in the available data.
+- A future improvement could increase geocoding coverage or use a more reliable geographic data source to reduce such gaps.
+
 ## Setup Instructions
 
 1. **Create & Activate Virtual Environment**

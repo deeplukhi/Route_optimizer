@@ -48,7 +48,15 @@ def optimize_route(request):
             data["starting_fuel_gallons"],
         )
     except RouteImpossibleError as exc:
-        return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {
+                "error": "no_reachable_fuel_station",
+                "message": str(exc),
+                "from_mile": exc.from_mile,
+                "to_mile": exc.to_mile,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     return Response(
         {

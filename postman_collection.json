@@ -1,0 +1,184 @@
+{
+  "info": {
+    "_postman_id": "spotter-route-optimizer-api",
+    "name": "Spotter Route Optimizer API",
+    "description": "Collection for testing the Spotter fuel-route-optimizer API.\n\nBase URL variable: `baseUrl` (default http://127.0.0.1:8000).\n\nNotes:\n- Only geocoded stations within a 15-mile corridor of the route are eligible.\n- Range = starting_fuel_gallons x 10 MPG, capped at 500 miles after each stop.\n- Rapid successive calls may hit Nominatim rate limits; retry after a few seconds.\n- NY -> San Francisco intentionally returns a structured 400 (known Wyoming geocoding-coverage gap).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health", ""]
+        },
+        "description": "Returns `{\"status\": \"ok\"}` if the server is up."
+      }
+    },
+    {
+      "name": "Optimize - New York to Chicago",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"New York, NY\",\n  \"end\": \"Chicago, IL\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/optimize-route/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "optimize-route", ""]
+        },
+        "description": "Expected 200: 2 fuel stops, total_fuel_cost $128.66."
+      }
+    },
+    {
+      "name": "Optimize - Los Angeles to Phoenix",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"Los Angeles, CA\",\n  \"end\": \"Phoenix, AZ\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/optimize-route/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "optimize-route", ""]
+        },
+        "description": "Expected 200: no fuel stops needed (373 mi < 500), total_fuel_cost $0.00."
+      }
+    },
+    {
+      "name": "Optimize - Custom starting fuel (30 gal)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"New York, NY\",\n  \"end\": \"Chicago, IL\",\n  \"starting_fuel_gallons\": 30\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/optimize-route/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "optimize-route", ""]
+        },
+        "description": "Optional field `starting_fuel_gallons` (default 50.0, min 0.1). Lower value -> more stops."
+      }
+    },
+    {
+      "name": "Error - No reachable geocoded station (NY to SF)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"New York, NY\",\n  \"end\": \"San Francisco, CA\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/optimize-route/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "optimize-route", ""]
+        },
+        "description": "Expected 400 with structured error: `error` = no_reachable_fuel_station, plus `message`, `from_mile`, `to_mile`. This is the known Wyoming geocoding-coverage gap."
+      }
+    },
+    {
+      "name": "Error - Unknown location",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"Xqzwx Notaplace 98765\",\n  \"end\": \"Chicago, IL\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/optimize-route/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "optimize-route", ""]
+        },
+        "description": "Expected 400: `{\"error\": \"Failed to resolve location coordinates. Please check city names.\"}`"
+      }
+    },
+    {
+      "name": "Error - Missing required field (end)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"Boston, MA\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/optimize-route/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "optimize-route", ""]
+        },
+        "description": "Expected 400 DRF validation error: `end` is required."
+      }
+    },
+    {
+      "name": "Error - Invalid starting fuel (0)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"A\",\n  \"end\": \"B\",\n  \"starting_fuel_gallons\": 0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/optimize-route/",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "optimize-route", ""]
+        },
+        "description": "Expected 400 DRF validation error: `starting_fuel_gallons` must be >= 0.1."
+      }
+    }
+  ]
+}
