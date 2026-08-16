@@ -5,7 +5,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 
 from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderServiceError
+from geopy.exc import GeocoderServiceError, GeocoderTimedOut
 
 from route_optimizer.fuel_data import PROJECT_ROOT
 
@@ -90,13 +90,15 @@ class Command(BaseCommand):
 
     @staticmethod
     def _geocode(geocoder, row):
-        query = "{}, {}, {}, USA".format(
-            row["Address"], row["City"], row["State"]
-        )
-        try:
-            location = geocoder.geocode(query, timeout=20)
-        except GeocoderServiceError:
-            return None, None
+        query = {"street": row["Address"], "city": row["City"], "state": row["State"]}
+        for attempt in range(3):
+            try:
+                location = geocoder.geocode(query, country_codes="us", timeout=20)
+            except (GeocoderTimedOut, GeocoderServiceError):
+                if attempt < 2:
+                    time.sleep(2 ** attempt)
+                continue
+            break
         if location is None:
             return None, None
         return location.latitude, location.longitude

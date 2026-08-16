@@ -1,4 +1,6 @@
 from django.http import JsonResponse
+from geopy.exc import GeocoderServiceError, GeocoderTimedOut, GeocoderUnavailable
+from openrouteservice.exceptions import ApiError
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -20,7 +22,19 @@ def optimize_route(request):
     serializer.is_valid(raise_exception=True)
 
     data = serializer.validated_data
-    route = routing_service.build_route(data["start"], data["end"])
+
+    try:
+        route = routing_service.build_route(data["start"], data["end"])
+    except (GeocoderTimedOut, GeocoderUnavailable, GeocoderServiceError):
+        return Response(
+            {"error": "Failed to resolve location coordinates. Please check city names."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    except (ApiError, Exception):
+        return Response(
+            {"error": "Failed to generate route from external mapping service."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
     try:
         stops, total_cost = optimization_service.optimize_route(
