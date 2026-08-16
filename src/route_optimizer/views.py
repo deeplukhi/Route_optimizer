@@ -25,7 +25,12 @@ def optimize_route(request):
 
     try:
         route = routing_service.build_route(data["start"], data["end"])
-    except (GeocoderTimedOut, GeocoderUnavailable, GeocoderServiceError):
+    except (
+        GeocoderTimedOut,
+        GeocoderUnavailable,
+        GeocoderServiceError,
+        routing_service.GeocodeError,
+    ):
         return Response(
             {"error": "Failed to resolve location coordinates. Please check city names."},
             status=status.HTTP_400_BAD_REQUEST,

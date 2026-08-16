@@ -28,5 +28,4 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Generated data artifacts
-fuel_prices_with_coords.csv
+

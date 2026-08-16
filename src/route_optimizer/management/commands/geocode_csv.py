@@ -86,11 +86,17 @@ class Command(BaseCommand):
             reader = csv.DictReader(fh)
             if "OPIS Truckstop ID" not in (reader.fieldnames or []):
                 return set()
-            return {row["OPIS Truckstop ID"] for row in reader}
+            return {
+                row["OPIS Truckstop ID"]
+                for row in reader
+                if row.get("Latitude") and row.get("Longitude")
+            }
 
     @staticmethod
     def _geocode(geocoder, row):
-        query = {"street": row["Address"], "city": row["City"], "state": row["State"]}
+        query = "{}, {}, {}, USA".format(
+            row["Address"], row["City"], row["State"]
+        )
         for attempt in range(3):
             try:
                 location = geocoder.geocode(query, country_codes="us", timeout=20)
@@ -105,8 +111,25 @@ class Command(BaseCommand):
 
     @staticmethod
     def _append_rows(output_path, rows, new_rows, done_ids):
-        combined = [row for row in rows if row["OPIS Truckstop ID"] in done_ids]
-        combined.extend(new_rows)
+        existing = {}
+        if output_path.is_file():
+            with output_path.open(newline="", encoding="utf-8-sig") as fh:
+                existing = {
+                    row["OPIS Truckstop ID"]: row
+                    for row in csv.DictReader(fh)
+                    if row.get("OPIS Truckstop ID")
+                }
+        combined = list(existing.values())
+        for row in new_rows:
+            existing_row = existing.get(row["OPIS Truckstop ID"])
+            if (
+                existing_row is not None
+                and existing_row.get("Latitude")
+                and existing_row.get("Longitude")
+            ):
+                continue
+            existing[row["OPIS Truckstop ID"]] = row
+        combined = list(existing.values())
         fieldnames = [*rows[0].keys(), "Latitude", "Longitude"]
         with output_path.open("w", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(fh, fieldnames=fieldnames)
